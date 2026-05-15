@@ -7,12 +7,29 @@ import Stars from "./components/Stars";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
-  // const [loading, setLoading] = useState(false);
-  // const [loaderText, setLoaderText] = useState("Loading...");
-  // const [showStars, setShowStars] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [user, setUser] = useState(null);
+
+  const handleLogin = (userData, guestMode = false) => {
+    setUser(userData);
+    setIsGuest(guestMode);
+    setLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setLoggedIn(false);
+    setIsGuest(false);
+    setUser(null);
+  };
 
   return (
-    <>{loggedIn ? <HomePage /> : <LoginPage onLogin={setLoggedIn(true)} />}</>
+    <>
+      {loggedIn ? (
+        <HomePage onLogout={handleLogout} isGuest={isGuest} user={user} />
+      ) : (
+        <LoginPage onLogin={handleLogin} />
+      )}
+    </>
   );
 }
 

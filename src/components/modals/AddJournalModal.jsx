@@ -2,120 +2,92 @@ import { useState } from "react";
 import { COLORS, EMOJIS } from "../../utils/constants";
 
 export default function AddJournalModal({ onClose, journals, setJournals }) {
-
   const [journalName, setJournalName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
-const [selectedEmoji, setSelectedEmoji] = useState("📖");
+  const [selectedEmoji, setSelectedEmoji] = useState("📖");
   function createJournal() {
+    if (!journalName.trim()) return;
 
-  if (!journalName.trim()) return;
+    const newJournal = {
+      id: crypto.randomUUID(),
+      name: journalName,
+      color: selectedColor,
+      emoji: selectedEmoji,
+      entries: [],
+    };
 
-  const newJournal = {
-    id: crypto.randomUUID(),
-    name: journalName,
-    color: selectedColor,
-    emoji: selectedEmoji,
-    entries: [],
-  };
+    setJournals([newJournal, ...journals]);
 
-  setJournals([newJournal, ...journals]);
+    onClose();
+  }
 
-  onClose();
-}
+  return (
+    <>
+      <div className="modal-overlay open">
+        <div className="modal">
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
+          <div className="modal-icon">📚</div>
+          <h2>Create a New Journal</h2>
+          <p>Give your journal a name and personality</p>
+          <div className="modal-field">
+            <label className="modal-label">Journal name</label>
+            <input
+              type="text"
+              className="modal-input"
+              placeholder="e.g. Dreams &amp; Musings..."
+              maxLength="50"
+              value={journalName}
+              onChange={(e) => setJournalName(e.target.value)}
+            />
+          </div>
+          <div className="modal-field">
+            <label className="modal-label">Cover color</label>
+            <div className="color-picker-row">
+              {COLORS.map((color, index) => (
+                <div
+                  key={index}
+                  className={`color-swatch ${
+                    selectedColor.bg === color.bg ? "selected" : ""
+                  }`}
+                  style={{
+                    background: color.bg,
+                  }}
+                  onClick={() => setSelectedColor(color)}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="modal-field">
+            <label className="modal-label">Cover icon</label>
+            <div className="emoji-picker-row">
+              {EMOJIS.map((emoji, index) => (
+                <div
+                  key={index}
+                  className={`emoji-opt ${
+                    selectedEmoji === emoji ? "selected" : ""
+                  }`}
+                  onClick={() => setSelectedEmoji(emoji)}
+                >
+                  {emoji}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="modal-actions">
+            <button className="modal-btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button className="modal-btn-primary" onClick={createJournal}>
+              Create Journal ✦
+            </button>
+          </div>
+        </div>
+      </div>
 
-    return (
-        
-<>
-       
-<div className="modal-overlay open" >
-  <div className="modal">
-    <button className="modal-close" onClick={onClose}>
-      ✕
-    </button>
-    <div className="modal-icon">📚</div>
-    <h2>Create a New Journal</h2>
-    <p>Give your journal a name and personality</p>
-    <div className="modal-field">
-      <label className="modal-label">Journal name</label>
-      <input type="text" className="modal-input" placeholder="e.g. Dreams &amp; Musings..." maxLength="50" value={journalName}
-  onChange={(e) => setJournalName(e.target.value)}/>
-    </div>
-    <div className="modal-field">
-      <label className="modal-label">Cover color</label>
-      <div className="color-picker-row">
-
-  {COLORS.map((color, index) => (
-
-    <div
-      key={index}
-      className={`color-swatch ${
-        selectedColor.bg === color.bg
-          ? "selected"
-          : ""
-      }`}
-      style={{
-        background: color.bg,
-      }}
-      onClick={() => setSelectedColor(color)}
-    />
-  ))}
-
-</div>
-    </div>
-    <div className="modal-field">
-      <label className="modal-label">Cover icon</label>
-      <div className="emoji-picker-row">
-
-  {EMOJIS.map((emoji, index) => (
-
-    <div
-      key={index}
-      className={`emoji-opt ${
-        selectedEmoji === emoji
-          ? "selected"
-          : ""
-      }`}
-      onClick={() => setSelectedEmoji(emoji)}
-    >
-
-      {emoji}
-
-    </div>
-  ))}
-
-</div>
-    </div>
-    <div className="modal-actions">
-      <button className="modal-btn-secondary"  onClick={onClose}>
-        Cancel
-      </button>
-      <button className="modal-btn-primary" onClick={createJournal}>
-        Create Journal ✦
-      </button>
-    </div>
-  </div>
-</div>
-
-
-
-{/* <!-- RENAME ENTRY MODAL --> */}
-{/* <div className="modal-overlay" id="modal-rename-entry">
-  <div className="modal">
-    <button className="modal-close" data-close="modal-rename-entry">✕</button>
-    <div className="modal-icon">✏️</div>
-    <h2>Rename Entry</h2>
-    <div className="modal-field">
-      <input type="text" className="modal-input" id="inp-rename-entry" placeholder="New title..." maxLength="80"/>
-    </div>
-    <div className="modal-actions">
-      <button className="modal-btn-secondary" data-close="modal-rename-entry">Cancel</button>
-      <button className="modal-btn-primary" id="btn-confirm-rename">Rename ✦</button>
-    </div>
-  </div>
-</div> */}
-
-{/* <input type="file" id="image-upload" accept="image/*" multiple style={{"display":"none"}}/> */}
-</>
-    );
+      {/* <input type="file" id="image-upload" accept="image/*" multiple style={{"display":"none"}}/> */}
+    </>
+  );
 }

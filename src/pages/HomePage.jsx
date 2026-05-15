@@ -1,22 +1,27 @@
 import React, { useEffect, useState } from "react";
 import TopBar from "../components/TopBar";
 import AddJournalModal from "../components/modals/AddJournalModal";
+import RenameEntryModal from "../components/modals/RenameEntryModal";
+import DeleteEntryModal from "../components/modals/DeleteEntryModal";
 import JournalCard from "../components/JournalCard";
 import EntryTab from "../components/EntryTab";
-import { Edit } from "lucide-react";
+import { Delete, Edit } from "lucide-react";
 import EditorPanel from "../components/EditorPanel";
 import AddEntryModal from "../components/modals/AddEntryModal";
 import Dashboard from "../components/Dashboard";
 import GlobalLoader from "../components/GlobalLoader";
 import Stars from "../components/Stars";
+import ContextMenu from "../components/ContextMenu";
 
-export default function HomePage() {
+export default function HomePage({ isGuest, user, onLogout }) {
   const [showJournalModal, setShowJournalModal] = useState(false);
   const [journals, setJournals] = useState([]);
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
-
   const [showEntryModal, setShowEntryModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [entryToRename, setEntryToRename] = useState(null);
+  const [notificationMsg, setNotificationMsg] = useState("");
 
   const updateEntry = (updatedEntry) => {
     setJournals((prev) => {
@@ -45,6 +50,52 @@ export default function HomePage() {
 
       setSelectedJournal(freshJournal);
       setSelectedEntry(updatedEntry);
+      return updatedJournals;
+    });
+  };
+
+  const handleShowRenameModal = (entry) => {
+    setEntryToRename(entry);
+    setShowRenameModal(true);
+  };
+
+  const handleConfirmRename = (newTitle) => {
+    if (!entryToRename) return;
+
+    const renamedEntry = {
+      ...entryToRename,
+      title: newTitle,
+      updatedAt: Date.now(),
+    };
+
+    updateEntry(renamedEntry);
+    setShowRenameModal(false);
+    setEntryToRename(null);
+  };
+
+  const handleDeleteEntry = (entry) => {
+    setJournals((prev) => {
+      const updatedJournals = prev.map((j) =>
+        j.id === selectedJournal.id
+          ? {
+              ...j,
+              entries: j.entries.filter((e) => e.id !== entry.id),
+            }
+          : j,
+      );
+
+      // Sync selectedJournal with updated entries
+      const freshJournal = updatedJournals.find(
+        (j) => j.id === selectedJournal.id,
+      );
+      if (freshJournal) {
+        setSelectedJournal(freshJournal);
+      }
+
+      if (selectedEntry?.id === entry.id) {
+        setSelectedEntry(null);
+      }
+
       return updatedJournals;
     });
   };
@@ -80,20 +131,59 @@ export default function HomePage() {
     }, 3000);
   };
   // console.log(selectedJournal);
+
+  const [entryToDelete, setEntryToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Guest mode limits: 2 journals max, 1 entry per journal
+  const GUEST_JOURNAL_LIMIT = 2;
+  const GUEST_ENTRIES_PER_JOURNAL = 1;
+
+  const canCreateJournal = () => {
+    if (!isGuest) return true;
+    return journals.length < GUEST_JOURNAL_LIMIT;
+  };
+
+  const canCreateEntry = () => {
+    if (!isGuest) return true;
+    if (!selectedJournal) return false;
+    return selectedJournal.entries.length < GUEST_ENTRIES_PER_JOURNAL;
+  };
+
+  const handleShowDeleteModal = (entry) => {
+    setEntryToDelete(entry);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!entryToDelete) return;
+
+    handleDeleteEntry(entryToDelete);
+    setShowDeleteModal(false);
+    setEntryToDelete(null);
+  };
+
   return (
     <>
       <GlobalLoader loading={loading} text={loadingText} />
-      <Stars active={loading} />
+      {/* <Stars active={loading} /> */}
       <div id="app-screen" className="screen active">
-        <TopBar />
+        <TopBar user={user} isGuest={isGuest} onLogout={onLogout} />
 
         {/* <!-- DASHBOARD --> */}
         {screen === "dashboard" && !selectedJournal && (
           <Dashboard
-            load={() => navigateWithLoader("journal", "Opening...")}
+            load={() => navigateWithLoader("journal", "Opening your storybook")}
             journals={journals}
             setSelectedJournal={setSelectedJournal}
-            setShowJournalModal={setShowJournalModal}
+            setShowJournalModal={() => {
+              if (!canCreateJournal()) {
+                alert("Guest mode: Maximum 2 journals allowed");
+                return;
+              }
+              setShowJournalModal(true);
+            }}
+            isGuest={isGuest}
           />
         )}
 
@@ -107,10 +197,7 @@ export default function HomePage() {
                   onClick={() => {
                     (setSelectedJournal(null),
                       setSelectedEntry(null),
-                      navigateWithLoader(
-                        "dashboard",
-                        "Closing the journal...",
-                      ));
+                      navigateWithLoader("dashboard", "Returning..."));
                   }}
                 >
                   ← Back to journals
@@ -125,7 +212,13 @@ export default function HomePage() {
               <div className="sidebar-new-entry">
                 <button
                   className="new-entry-btn"
-                  onClick={() => setShowEntryModal(true)}
+                  onClick={() => {
+                    if (!canCreateEntry()) {
+                      alert("Guest mode: Maximum 1 entry per journal");
+                      return;
+                    }
+                    setShowEntryModal(true);
+                  }}
                 >
                   ✦ New Entry
                 </button>
@@ -192,6 +285,13 @@ export default function HomePage() {
               setSelectedEntry={setSelectedEntry}
               updateEntry={updateEntry}
             />
+            <ContextMenu
+              entries={selectedJournal?.entries || []}
+              selectedJournal={selectedJournal}
+              selectedEntry={selectedEntry}
+              onShowRenameModal={handleShowRenameModal}
+              onShowDeleteModal={handleShowDeleteModal}
+            />
           </div>
         )}
       </div>
@@ -200,6 +300,26 @@ export default function HomePage() {
           onClose={() => setShowJournalModal(false)}
           journals={journals}
           setJournals={setJournals}
+        />
+      )}
+      {showRenameModal && (
+        <RenameEntryModal
+          entry={entryToRename}
+          onClose={() => {
+            setShowRenameModal(false);
+            setEntryToRename(null);
+          }}
+          onRename={handleConfirmRename}
+        />
+      )}
+      {showDeleteModal && (
+        <DeleteEntryModal
+          entry={entryToDelete}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setEntryToDelete(null);
+          }}
+          onDelete={handleConfirmDelete}
         />
       )}
     </>
