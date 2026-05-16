@@ -12,6 +12,7 @@ import Dashboard from "../components/Dashboard";
 import GlobalLoader from "../components/GlobalLoader";
 import Stars from "../components/Stars";
 import ContextMenu from "../components/ContextMenu";
+import { QUOTES } from "../utils/constants";
 
 export default function HomePage({ isGuest, user, onLogout }) {
   const [showJournalModal, setShowJournalModal] = useState(false);
@@ -132,6 +133,7 @@ export default function HomePage({ isGuest, user, onLogout }) {
   };
   // console.log(selectedJournal);
 
+  //delete entry confirmation
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -195,9 +197,12 @@ export default function HomePage({ isGuest, user, onLogout }) {
                 <button
                   className="sidebar-back-btn"
                   onClick={() => {
-                    (setSelectedJournal(null),
-                      setSelectedEntry(null),
-                      navigateWithLoader("dashboard", "Returning..."));
+                    setSelectedJournal(null);
+                    setSelectedEntry(null);
+                    const randomQuote =
+                      QUOTES[Math.floor(Math.random() * QUOTES.length)];
+
+                    navigateWithLoader("dashboard", randomQuote);
                   }}
                 >
                   ← Back to journals

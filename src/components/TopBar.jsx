@@ -1,7 +1,22 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function TopBar({ user, isGuest, onLogout }) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => !prev);
@@ -30,7 +45,11 @@ export default function TopBar({ user, isGuest, onLogout }) {
             </span>
           </div>
           {showDropdown && (
-            <div className="user-dropdown open" id="user-dropdown">
+            <div
+              className="user-dropdown open"
+              ref={dropdownRef}
+              id="user-dropdown"
+            >
               <div className="dropdown-item" id="dd-name">
                 👤 {userName} {isGuest && "(Guest)"}
               </div>
